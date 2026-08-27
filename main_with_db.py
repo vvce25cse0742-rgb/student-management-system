@@ -1,8 +1,9 @@
-# Student Management System
-# A beginner-friendly menu-driven console application with SQLite database persistence
+# Student Management System with SQLite Database
+# A beginner-friendly menu-driven console application with persistent data storage
 
 import sqlite3
 import os
+from datetime import datetime
 
 # Database file name
 DB_FILE = "students.db"
@@ -29,6 +30,7 @@ def create_database():
         
         connection.commit()
         connection.close()
+        print("✅ Database initialized successfully!")
     except sqlite3.Error as e:
         print(f"❌ Database error: {e}")
 
@@ -147,6 +149,8 @@ def search_student():
                         print(f"Age: {student['age']}")
                         print(f"Grade: {student['grade']}")
                         print(f"Email: {student['email']}")
+                        print(f"Created: {student['created_at']}")
+                        print(f"Updated: {student['updated_at']}")
                     else:
                         print(f"❌ Student with ID {student_id} not found!")
             
@@ -319,18 +323,57 @@ def delete_student():
         print(f"❌ Delete error: {e}")
 
 
+def get_statistics():
+    """Display database statistics"""
+    print("\n--- Database Statistics ---")
+    
+    try:
+        connection = get_database_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Total students
+            cursor.execute("SELECT COUNT(*) as total FROM students")
+            total = cursor.fetchone()['total']
+            
+            if total == 0:
+                print("❌ No students in the database.")
+                connection.close()
+                return
+            
+            # Average age
+            cursor.execute("SELECT AVG(age) as avg_age FROM students")
+            avg_age = cursor.fetchone()['avg_age']
+            
+            # Grade distribution
+            cursor.execute("SELECT grade, COUNT(*) as count FROM students GROUP BY grade ORDER BY grade")
+            grades = cursor.fetchall()
+            
+            connection.close()
+            
+            print(f"Total Students: {total}")
+            print(f"Average Age: {avg_age:.1f} years")
+            print("\nGrade Distribution:")
+            for grade_info in grades:
+                print(f"  Grade {grade_info['grade']}: {grade_info['count']} student(s)")
+    
+    except sqlite3.Error as e:
+        print(f"❌ Statistics error: {e}")
+
+
 def display_menu():
     """Display the main menu"""
     print("\n" + "=" * 50)
     print("    STUDENT MANAGEMENT SYSTEM".center(50))
-    print("    (SQLite Database)".center(50))
+    print("    (With SQLite Database)".center(50))
     print("=" * 50)
     print("1. Add Student")
     print("2. View All Students")
     print("3. Search Student")
     print("4. Update Student")
     print("5. Delete Student")
-    print("6. Exit")
+    print("6. View Statistics")
+    print("7. Exit")
     print("=" * 50)
 
 
@@ -343,7 +386,7 @@ def main():
     
     while True:
         display_menu()
-        choice = input("Enter your choice (1-6): ").strip()
+        choice = input("Enter your choice (1-7): ").strip()
         
         if choice == "1":
             add_student()
@@ -356,11 +399,13 @@ def main():
         elif choice == "5":
             delete_student()
         elif choice == "6":
+            get_statistics()
+        elif choice == "7":
             print("\n👋 Thank you for using Student Management System!")
             print("Goodbye!")
             break
         else:
-            print("❌ Invalid choice! Please enter a number between 1 and 6.")
+            print("❌ Invalid choice! Please enter a number between 1 and 7.")
 
 
 # Entry point of the program
